@@ -337,8 +337,8 @@ class QdmailBase extends QdmailBranch{
 		0 => array(
 			'multipart/mixed' => array(
 				'multipart/alternative'=>array(
-					'html'		=>	1,
 					'plain'		=>	1,
+					'html'		=>	1,
 					'OMIT'		=>	true,
 				),
 				'image'		=> 'BOTH', // Available Inline

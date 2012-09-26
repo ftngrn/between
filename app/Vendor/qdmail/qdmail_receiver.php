@@ -458,7 +458,7 @@ class QdDecodeBase extends QdmailReceiverError{
 			( !$this->already_attach && $this->attach_decode ) ){
 			if( isset( $this->header['content-type'] ) ){
 				$type = $this->typeJudge( $this->header['content-type'] );
-				preg_match( '/boundary\s*=\s*"([^"]+)"/is' , $this->header['content-type'] , $matches );
+				preg_match( '/boundary\s*=\s*"?([^"]+)"?/is' , $this->header['content-type'] , $matches );
 				if( isset( $matches[1] ) ){
 					$this->line = preg_split( '/\r?\n/is' , $this->body_all );
 					$this->num = 0;
@@ -518,6 +518,7 @@ class QdDecodeBase extends QdmailReceiverError{
 		if( !$this->skipto( '--' . $boundary ) ){
 			return false;
 		}
+		$this->num++;
 		do{
 			// header in body
 			$header = null;
@@ -533,7 +534,7 @@ class QdDecodeBase extends QdmailReceiverError{
 
 			if( isset( $header['content-type'] ) ){
 				$type = $this->typeJudge( $header['content-type'] );
-				preg_match( '/boundary\s*=\s*"([^"]+)"/is' , $header['content-type'] , $matches );
+				preg_match( '/boundary\s*=\s*"?([^"]+)"?/is' , $header['content-type'] , $matches );
 				if( !empty( $matches[1] ) ){
 					$this->buildPart( $matches[1] , $type );
 				}
