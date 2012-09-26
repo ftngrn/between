@@ -29,7 +29,7 @@ class FetchShell extends AppShell
 
 	protected $qdm = null;
 
-
+	protected $referencesNum = 1;
 
 	public function startUp() {
 		//$this->out("startUp");
@@ -38,8 +38,6 @@ class FetchShell extends AppShell
 
 		$this->qdm = & new Qdmail();
 	}
-
-
 
 	public function main() {
 		//$this->out("main");
@@ -80,7 +78,6 @@ class FetchShell extends AppShell
 				//ソースからパース
 				$msg = $this->parseMail($source);
 				$this->log(sprintf("Parsed mail uid:%s from:%s", $uid, $msg['from']), LOG_INFO);
-
 				//送信者マップと送信者の宛先ターゲットマップを取得
 				$map_id = null;
 				$map = null;
@@ -129,6 +126,7 @@ class FetchShell extends AppShell
 				$this->qdm->errorDisplay(false);
 				$this->qdm->smtpObject()->error_display = false;
 				$this->qdm->smtpLoglevelLink(true);
+				$this->qdm->logLevel(3);
 				$this->qdm->logPath(LOGS);
 				$this->qdm->logFilename("mail.log");
 				$this->qdm->errorlogPath(LOGS);
@@ -139,20 +137,43 @@ class FetchShell extends AppShell
 				$this->log(sprintf("Ready for smtp finished!"), LOG_INFO);
 
 				$this->log(sprintf("Set header,body for smtp"), LOG_INFO);
+				$this->qdm->messageIdRight("bt.exlock.net");
 				$this->qdm->to($target_map['email'], '');
 				$this->qdm->subject($template['subject']);
 				$this->qdm->from($this->mailConfig['mail'], $template['from_name']);
 				$this->qdm->text($body);
+
+				//新規ではなく、何かへの返信だった場合
+				if (!empty($msg['in-reply-to'])) {
+					//直前に自分が送ったメールのMessage-IDを取得し、In-Reply-Toヘッダに指定
+	//				$prev_mid = $this->getPrevMessageId($target_map['email']);
+					$prev_mid = $this->getPrevMessageId($map['email']);
+					if ($prev_mid) {
+						$this->qdm->addHeader('In-Reply-To', $prev_mid);
+						$this->log(sprintf("Set In-Reply-To [%s]", $prev_mid), LOG_DEBUG);
+					}
+					$refs = $this->getLastReferences($target_map['email'], $map['email']);
+					if (!empty($refs)) {
+						$this->qdm->addHeader('References', implode(" ", $refs));
+						$this->log(sprintf("Set %d References", count($refs)), LOG_DEBUG);
+					}
+				}
+
 				$this->log(sprintf("Set header,body for smtp finished!"), LOG_INFO);
 
 				$ret = $this->qdm->send();
-				$this->qdm->reset();
 				if ($ret) {
 					$this->log("Sent mail to [".$target_map['email']."]", LOG_INFO);
 
+					//送信したMessageIdを取得し
+					//送信メールの控えをとっておく
+					$mid = $this->trimMessageId($this->qdm->other_header['Message-Id']);
+					$copy_path = CACHE . sprintf("%s_%s_TO_%s.eml", date("YmdHis"), $mid, $target_map['email']);
+					file_put_contents($copy_path, $body, LOCK_EX|FILE_APPEND);
+
 					//返信したメールは次回からフェッチしないように
 					//UIDに対して既読にしてフラグを付ける
-					$set_flag_list = array("\\Flagged");
+					$set_flag_list = array("\\Seen", "\\Flagged");
 					$ret = $this->setMailFlag($mbox, array($uid), $set_flag_list);
 					if ($ret) {
 						$this->log(sprintf("Set flag %s for uid:%s from:%s", implode(",", $set_flag_list), $uid, $msg['from']), LOG_INFO);
@@ -162,12 +183,14 @@ class FetchShell extends AppShell
 				} else {
 					$this->log("Send mail failed for [".$target_map['email']."]", LOG_ERR);
 				}
+
+				$this->qdm->reset();
 			}
 
 			//無関係だったメールは次回からフェッチしないように
 			//UIDに対して既読にしてフラグを付ける
 			if (count($other_mail_uid_list)) {
-				$set_flag_list = array("\\Flagged");
+				$set_flag_list = array("\\Seen", "\\Flagged");
 				$ret = $this->setMailFlag($mbox, $other_mail_uid_list, $set_flag_list);
 				if ($ret) {
 					$this->log(sprintf("Set flag %s for other mails uid:%s", implode(",", $set_flag_list), implode(",", $other_mail_uid_list)), LOG_INFO);
@@ -329,6 +352,9 @@ class FetchShell extends AppShell
 			"to" => $m->header(array('to', 'mail')),
 			"subject" => $m->header(array('subject', 'name')),
 			"date" => $m->header('date'),
+			"message-id" => $this->trimMessageId($m->header('message-id')),
+			"references" => $this->trimMessageId($m->header('references')),
+			"in-reply-to" => $this->trimMessageId($m->header('in-reply-to')),
 			"body" => $m->bodyAutoSelect(),
 			"attach" => $m->attach(),
 		);
@@ -341,4 +367,53 @@ class FetchShell extends AppShell
 		return $msg;
 	}
 
+	private function trimMessageId($mid) {
+		return preg_replace("/[<>]/", "", $mid);
+	}
+
+	//直前に自分が送ったメールのMessage-IDを取得
+	private function getPrevMessageIdList($prev_to, $limit = 1) {
+		$mid_list = array();
+		$path = CACHE .sprintf('*_TO_%s.eml', $prev_to);
+		$files = glob($path);
+		if (count($files) > 0) {
+			rsort($files, SORT_STRING);
+			if ($limit > count($files)) {
+				$limit = count($files);
+			}
+			for ($i = 0; $i < $limit; $i++) {
+				$prev_mid = $files[$i];
+				$prev_mid = preg_replace('#^'.CACHE.'[0-9]+_#', '', $prev_mid);
+				$prev_mid = preg_replace('/_TO_(.+)$/', '', $prev_mid);
+				$mid_list []= $prev_mid;
+			}
+		}
+		return $mid_list;
+	}
+
+	private function getPrevMessageId($prev_to) {
+		$list = $this->getPrevMessageIdList($prev_to);
+		$prev_mid = null;
+		if (count($list) > 0) {
+			$prev_mid = $list[0];
+		}
+		return $prev_mid;
+	}
+
+	//直前に自分が送受信したメールのMessage-IDを取得
+	private function getLastReferences($prev_to, $prev_from) {
+		$mid_list = array();
+		$to_list = $this->getPrevMessageIdList($prev_to, $this->referencesNum);
+		$from_list = $this->getPrevMessageIdList($prev_from, $this->referencesNum);
+		$count = count($to_list) > count($from_list) ? count($to_list) : count($from_list);
+		for ($i = 0; $i < $count; $i++) {
+			if ($i < count($to_list)) {
+				$mid_list []= sprintf("<%s>", $to_list[$i]);
+			}
+			if ($i < count($from_list)) {
+				$mid_list []= sprintf("<%s>", $from_list[$i]);
+			}
+		}
+		return $mid_list;
+	}
 }
