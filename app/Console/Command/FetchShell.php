@@ -43,7 +43,7 @@ class FetchShell extends AppShell
 
 	public function main() {
 		//$this->out("main");
-		$this->log("Start fetch", LOG_INFO);
+		$this->log("Start fetch（・δ・●）", LOG_INFO);
 
 		//IMAPオプションチェック
 		$this->log("Check imap options", LOG_INFO);
@@ -177,12 +177,13 @@ class FetchShell extends AppShell
 			}
 		}
 		catch (Exception $ex) {
-			$this->log($ex->getMessage());
+			$this->log($ex->getMessage(), LOG_ERR);
 		}
 		//IMAPクローズ
 		if (!is_null($mbox) && is_resource($mbox)) {
 			imap_close($mbox);
 		}
+		$this->log(sprintf("Finish fetch, bye! (*´∀｀)"), LOG_INFO);
 	}
 
 
