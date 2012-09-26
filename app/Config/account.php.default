@@ -1,0 +1,28 @@
+<?php
+
+class ACCOUNT_CONFIG {
+
+	public $mail = array(
+			'name' => 'name',
+			'mail' => 'mailaddress@sample.com',
+			'user' => 'username',
+			'pass' => 'password',
+
+			//For php-imap
+			'imap' => array(
+				'host' => 'imap host',
+				'port' => 'imap port',
+				'flag' => '/imap/ssl/novalidate-cert',
+				'mailbox_name' => 'INBOX',
+			),
+
+			//For QdSmtp
+			'smtp' => array(
+				'host' => 'smtp host',
+				'port' => 'smtp port',
+				'protocol' => 'SMTP_AUTH',
+			),
+		);
+
+}
+
