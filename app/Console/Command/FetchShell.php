@@ -1,5 +1,8 @@
 <?php
 config('account');
+require_once(APP. 'Vendor' .DS. 'qdmail/qdmail.php');
+require_once(APP. 'Vendor' .DS. 'qdmail/qdmail_receiver.php');
+require_once(APP. 'Vendor' .DS. 'qdmail/qdsmtp.php');
 
 class FetchShell extends AppShell
 {
@@ -10,11 +13,33 @@ class FetchShell extends AppShell
 	*/
 	protected $mailConfig = array();
 
+	/**
+	* Map configurations
+	*
+	* @var array
+	*/
+	protected $mapConfig = array();
+
+	/**
+	* Template configurations
+	*
+	* @var array
+	*/
+	protected $templateConfig = array();
+
+	protected $qdm = null;
+
+
+
 	public function startUp() {
 		//$this->out("startUp");
 		$this->log("Ready for fetch", LOG_INFO);
 		$this->loadAccountConfig();
+
+		$this->qdm = & new Qdmail();
 	}
+
+
 
 	public function main() {
 		//$this->out("main");
@@ -30,27 +55,125 @@ class FetchShell extends AppShell
 		}
 		$this->log("Get imap options", LOG_INFO);
 
+		$other_mail_uid_list = array();
 		$mails = array();
 		$mbox = null;
 		try {
 			$this->log("Check mail", LOG_INFO);
 
 			//IMAPオープン
-			$mbox = $this->getMailBox($this->mailConfig);
+			$mbox = $this->getMailBox($this->mailConfig['imap']);
 
 			//IMAPでヘッダとボディをフェッチ
-			//条件 => 未読・未フラグ
+			//条件 => 未フラグ
 			$search_options = array(
 				'criteria' => array(
-					'seen' => false,
 					'flagged' => false,
 				),
 			);
 			$mails = $this->getListMails($mbox, $search_options);
+			$this->log(sprintf("Get %d mails", count($mails)), LOG_INFO);
+
 			foreach ($mails as $i => $mail) {
+				$uid = $mail['uid'];
 				$source = $mail['header'].$mail['body'];
+				//ソースからパース
 				$msg = $this->parseMail($source);
-				var_dump($msg);
+				$this->log(sprintf("Parsed mail uid:%s from:%s", $uid, $msg['from']), LOG_INFO);
+
+				//送信者マップと送信者の宛先ターゲットマップを取得
+				$map_id = null;
+				$map = null;
+				$target_map = null;
+				foreach ($this->mapConfig as $_id => $_map) {
+					if (in_array($msg['from'], $_map['emails'], true)) {
+						$map_id = $_id;
+						$map = $_map;
+						if (array_key_exists($_map['to'], $this->mapConfig)) {
+							$target_map = $this->mapConfig[$_map['to']];
+						}
+						break;
+					}
+				}
+
+				if (is_null($map_id) || empty($map)) {
+					$this->log(sprintf("No map for mail from %s", $msg['from']), LOG_DEBUG);
+					$other_mail_uid_list []= $uid;
+					continue;
+				}
+				$this->log(sprintf("Get map for mail from %s", $msg['from']), LOG_INFO);
+
+				if (is_null($target_map)) {
+					$this->log(sprintf("No target_map for map[%d]", $map_id), LOG_DEBUG);
+					$other_mail_uid_list []= $uid;
+					continue;
+				}
+				$this->log(sprintf("Get target_map for map[%d]", $map_id), LOG_INFO);
+
+				//ターゲットのテンプレート取得
+				$template = $this->templateConfig[$target_map['template_for_receive']];
+				if (!$template) {
+					$this->log(sprintf("No template for [%s]", $target_map['template_for_receive']), LOG_DEBUG);
+					$other_mail_uid_list []= $uid;
+					continue;
+				}
+				$this->log(sprintf("Get template for [%s]", $target_map['template_for_receive']), LOG_INFO);
+
+				$body = $template['body'];
+				$body = str_replace('%%SUBJECT%%', $msg['subject'], $body);
+				$body = str_replace('%%BODY%%', trim($msg['body']), $body);
+				$this->log(sprintf("Replace subject and body"), LOG_INFO);
+
+				//メールを作成して送信
+				$this->log(sprintf("Ready for smtp"), LOG_INFO);
+				$this->qdm->errorDisplay(false);
+				$this->qdm->smtpObject()->error_display = false;
+				$this->qdm->smtpLoglevelLink(true);
+				$this->qdm->logPath(LOGS);
+				$this->qdm->logFilename("mail.log");
+				$this->qdm->errorlogPath(LOGS);
+				$this->qdm->errorlogFilename("error_mail.log");
+
+				$this->qdm->smtp(true);	//smtp send
+				$this->qdm->smtpServer($this->mailConfig['smtp']);
+				$this->log(sprintf("Ready for smtp finished!"), LOG_INFO);
+
+				$this->log(sprintf("Set header,body for smtp"), LOG_INFO);
+				$this->qdm->to($target_map['email'], '');
+				$this->qdm->subject($template['subject']);
+				$this->qdm->from($this->mailConfig['mail'], $template['from_name']);
+				$this->qdm->text($body);
+				$this->log(sprintf("Set header,body for smtp finished!"), LOG_INFO);
+
+				$ret = $this->qdm->send();
+				$this->qdm->reset();
+				if ($ret) {
+					$this->log("Sent mail to [".$target_map['email']."]", LOG_INFO);
+
+					//返信したメールは次回からフェッチしないように
+					//UIDに対して既読にしてフラグを付ける
+					$set_flag_list = array("\\Flagged");
+					$ret = $this->setMailFlag($mbox, array($uid), $set_flag_list);
+					if ($ret) {
+						$this->log(sprintf("Set flag %s for uid:%s from:%s", implode(",", $set_flag_list), $uid, $msg['from']), LOG_INFO);
+					} else {
+						$this->log(sprintf("Can not set flag %s for uid:%s from:%s", implode(",", $set_flag_list), $uid, $msg['from']), LOG_ERR);
+					}
+				} else {
+					$this->log("Send mail failed for [".$target_map['email']."]", LOG_ERR);
+				}
+			}
+
+			//無関係だったメールは次回からフェッチしないように
+			//UIDに対して既読にしてフラグを付ける
+			if (count($other_mail_uid_list)) {
+				$set_flag_list = array("\\Flagged");
+				$ret = $this->setMailFlag($mbox, $other_mail_uid_list, $set_flag_list);
+				if ($ret) {
+					$this->log(sprintf("Set flag %s for other mails uid:%s", implode(",", $set_flag_list), implode(",", $other_mail_uid_list)), LOG_INFO);
+				} else {
+					$this->log(sprintf("Can not set flag %s for other mails uid:%s", implode(",", $set_flag_list), implode(",", $other_mail_uid_list)), LOG_ERR);
+				}
 			}
 		}
 		catch (Exception $ex) {
@@ -61,6 +184,8 @@ class FetchShell extends AppShell
 			imap_close($mbox);
 		}
 	}
+
+
 
 	private function loadAccountConfig() {
 		$acc = new ACCOUNT_CONFIG;
@@ -80,8 +205,8 @@ class FetchShell extends AppShell
 	* @return object IMAPリソース
 	*/
 	private function getMailBox($options) {
-		$mailcon = sprintf("{%s:%d%s}", $options['imap']['host'], $options['imap']['port'], $options['imap']['flag']);
-		$mailbox = sprintf("%s%s", $mailcon, $options['imap']['mailbox_name']);
+		$mailcon = sprintf("{%s:%d%s}", $options['host'], $options['port'], $options['flag']);
+		$mailbox = sprintf("%s%s", $mailcon, $options['mailbox_name']);
 		$mbox = imap_open($mailbox, $options['user'], $options['pass']);
 		if (empty($mbox)) {
 			throw new ErrorException(sprintf("Cant open mbox:%s", $mailbox));
@@ -197,9 +322,6 @@ class FetchShell extends AppShell
 	* @return array メール情報配列
 	*/
 	private function parseMail($src) {
-		require_once(APP. 'Vendor' .DS. 'qdmail/qdmail.php');
-		require_once(APP. 'Vendor' .DS. 'qdmail/qdmail_receiver.php');
-
 		$m = QdmailReceiver::start('direct', $src);
 		$msg = array(
 			"from" => $m->header(array('from', 'mail')),
