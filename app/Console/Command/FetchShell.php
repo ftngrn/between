@@ -33,7 +33,7 @@ class FetchShell extends AppShell
 
 	public function startUp() {
 		//$this->out("startUp");
-		$this->log("Ready for fetch", LOG_INFO);
+		$this->log("Ready for fetch", LOG_DEBUG);
 		$this->loadAccountConfig();
 
 		$this->qdm = & new Qdmail();
@@ -265,7 +265,7 @@ class FetchShell extends AppShell
 		//日付昇順で、上記の条件に合致するメールのメッセージUIDを取得
 		$msgNoList = imap_sort($mbox, SORTDATE, 0, SE_UID|SE_NOPREFETCH, $criteria, 'UTF-8');
 		if (empty($msgNoList) || !is_array($msgNoList)) {
-			$this->log(sprintf("Not found for criteria [%s]", trim($criteria)), LOG_INFO);
+			$this->log(sprintf("Not found for criteria [%s]", trim($criteria)), LOG_DEBUG);
 			return $res;
 		}
 
