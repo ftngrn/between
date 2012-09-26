@@ -137,7 +137,7 @@ class FetchShell extends AppShell
 				$this->log(sprintf("Ready for smtp finished!"), LOG_INFO);
 
 				$this->log(sprintf("Set header,body for smtp"), LOG_INFO);
-				$this->qdm->messageIdRight("bt.exlock.net");
+				$this->qdm->messageIdRight("gmail.com");
 				$this->qdm->to($target_map['email'], '');
 				$this->qdm->subject($template['subject']);
 				$this->qdm->from($this->mailConfig['mail'], $template['from_name']);
@@ -168,7 +168,7 @@ class FetchShell extends AppShell
 					//送信したMessageIdを取得し
 					//送信メールの控えをとっておく
 					$mid = $this->trimMessageId($this->qdm->other_header['Message-Id']);
-					$copy_path = CACHE . sprintf("%s_%s_TO_%s.eml", date("YmdHis"), $mid, $target_map['email']);
+					$copy_path = CACHE. 'mails' .DS. sprintf("%s_%s_TO_%s.eml", date("YmdHis"), $mid, $target_map['email']);
 					file_put_contents($copy_path, $body, LOCK_EX|FILE_APPEND);
 
 					//返信したメールは次回からフェッチしないように
@@ -355,7 +355,8 @@ class FetchShell extends AppShell
 			"message-id" => $this->trimMessageId($m->header('message-id')),
 			"references" => $this->trimMessageId($m->header('references')),
 			"in-reply-to" => $this->trimMessageId($m->header('in-reply-to')),
-			"body" => $m->bodyAutoSelect(),
+			"body" => $m->text(),
+			"body_auto" => $m->bodyAutoSelect(),
 			"attach" => $m->attach(),
 		);
 		//本文のエンコーディングを変換
@@ -363,6 +364,10 @@ class FetchShell extends AppShell
 		if ($msg["encoding"] !== "UTF-8") {
 			$msg['body'] = mb_convert_encoding($msg['body'], 'UTF-8', $msg["encoding"]);
 		}
+		//署名以降を削除
+		$msg['body_raw'] = $msg['body'];
+		$body = preg_split('/--\r?\n/is', $msg['body'], 2);
+		$msg['body'] = reset($body);
 
 		return $msg;
 	}
@@ -374,7 +379,7 @@ class FetchShell extends AppShell
 	//直前に自分が送ったメールのMessage-IDを取得
 	private function getPrevMessageIdList($prev_to, $limit = 1) {
 		$mid_list = array();
-		$path = CACHE .sprintf('*_TO_%s.eml', $prev_to);
+		$path = CACHE. 'mails' .DS. sprintf('*_TO_%s.eml', $prev_to);
 		$files = glob($path);
 		if (count($files) > 0) {
 			rsort($files, SORT_STRING);
@@ -383,7 +388,7 @@ class FetchShell extends AppShell
 			}
 			for ($i = 0; $i < $limit; $i++) {
 				$prev_mid = $files[$i];
-				$prev_mid = preg_replace('#^'.CACHE.'[0-9]+_#', '', $prev_mid);
+				$prev_mid = preg_replace('#^'.CACHE.'mails/[0-9]+_#', '', $prev_mid);
 				$prev_mid = preg_replace('/_TO_(.+)$/', '', $prev_mid);
 				$mid_list []= $prev_mid;
 			}
