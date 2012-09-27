@@ -5,24 +5,63 @@ class ACCOUNT_CONFIG {
 	public $mail = array(
 			'name' => 'name',
 			'mail' => 'mailaddress@sample.com',
-			'user' => 'username',
-			'pass' => 'password',
 
 			//For php-imap
 			'imap' => array(
-				'host' => 'imap host',
-				'port' => 'imap port',
+				'host' => 'imap_host',
+				'port' => 'imap_port',
 				'flag' => '/imap/ssl/novalidate-cert',
 				'mailbox_name' => 'INBOX',
+				'user' => 'imap_username',
+				'pass' => 'imap_password',
 			),
 
 			//For QdSmtp
 			'smtp' => array(
-				'host' => 'smtp host',
-				'port' => 'smtp port',
+				'from' => 'mailaddress@sample.com',		//use for Return-Path
+				'host' => 'smtp_host',
+				'port' => 'smtp_port',
 				'protocol' => 'SMTP_AUTH',
+				'user' => 'smtp_username',
+				'pass' => 'smtp_password',
 			),
 		);
 
+	public $map = array(
+		1 => array(
+			'name' => 'user1',
+			'email' => 'user1@mailaddress.com',
+			'emails' => array('user1@mailaddress.com', 'user1@other_send_address.com'),
+			'to' => 2,	//send to
+			'template_for_receive' => 'template1',
+		),
+		2 => array(
+			'name' => 'user2',
+			'email' => 'user2@mail.net',
+			'emails' => array('user2@mail.net', 'user2@another_send_address.net'),
+			'to' => 1,	//send to
+			'template_for_receive' => 'template2',
+		),
+	);
+
+	/**
+	* Template for send
+	*
+	* Placeholders at body
+	*   %%SUBJECT%% ... replace by received subject
+	*   %%BODY%%    ... replace by received body
+	*/
+	public $template = array(
+		'template1' => array(
+			'from_name' => 'Between',
+			'subject' => "Announce",
+			'body' => "[%%SUBJECT%%]\n\n%%BODY%%",
+		),
+		'template2' => array(
+			'from_name' => 'Between template 2',
+			'subject' => "Announce 2",
+			'body' => "subject:%%SUBJECT%%\n\nbody:%%BODY%%\n\n--\nbetween\n",
+		),
+	);
 }
 
