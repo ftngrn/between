@@ -138,7 +138,11 @@ class FetchShell extends AppShell
 
 				$this->log(sprintf("Set header,body for smtp"), LOG_INFO);
 				$this->qdm->messageIdRight("gmail.com");
+
 				$this->qdm->to($target_map['email'], '');
+				if (isset($target_map['cc']) && !empty($target_map['cc'])) {
+					$this->qdm->cc($target_map['cc']);
+				}
 				$this->qdm->subject($template['subject']);
 				$this->qdm->from($this->mailConfig['mail'], $template['from_name']);
 				$this->qdm->text($body);

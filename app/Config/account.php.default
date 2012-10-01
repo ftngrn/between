@@ -32,6 +32,7 @@ class ACCOUNT_CONFIG {
 			'name' => 'user1',
 			'email' => 'user1@mailaddress.com',
 			'emails' => array('user1@mailaddress.com', 'user1@other_send_address.com'),
+			'cc' => array(array('user1@other_send_address.com')),
 			'to' => 2,	//send to
 			'template_for_receive' => 'template1',
 		),
