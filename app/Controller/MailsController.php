@@ -8,6 +8,25 @@ App::uses('AppController', 'Controller');
 class MailsController extends AppController {
 
 /**
+ * show method
+ *
+ * @return void
+ */
+	public function show() {
+		if (!isset($this->params['hash'])) {
+			throw new NotFoundException(__('Empty hash'));
+		}
+		$hash = $this->params['hash'];
+		$source = $this->Mail->findByHash($hash);
+		if (!$source) {
+			throw new NotFoundException(__('Invalid hash'));
+		}
+
+		$mail = $this->Mail->parse($source['Mail']['source']);
+		$this->set('mail', $mail);
+	}
+
+/**
  * index method
  *
  * @return void

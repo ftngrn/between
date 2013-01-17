@@ -55,4 +55,46 @@ class Mail extends AppModel {
 		$hash = bin2hex($bytes);
 		return $hash;
 	}
+
+  /**
+  * メールを解析する
+  *
+  * @param string $src メールのソース
+  * @return array メール情報配列
+  */
+  public function parse($src) {
+		//Qdmail
+		require_once(APP. 'Vendor' .DS. 'qdmail/qdmail.php');
+		require_once(APP. 'Vendor' .DS. 'qdmail/qdmail_receiver.php');
+
+		$m = QdmailReceiver::start('direct', $src);
+		$msg = array(
+			"from" => $m->header(array('from', 'mail')),
+			"to" => $m->header(array('to', 'mail')),
+			"subject" => $m->header(array('subject', 'name')),
+			"date" => $m->header('date'),
+			"message-id" => $this->trimMessageId($m->header('message-id')),
+			"references" => $this->trimMessageId($m->header('references')),
+			"in-reply-to" => $this->trimMessageId($m->header('in-reply-to')),
+			"body" => $m->text(),
+			"body_auto" => $m->bodyAutoSelect(),
+			"attach" => $m->attach(),
+		);
+		//本文のエンコーディングを変換
+		$msg["encoding"] = mb_detect_encoding($msg['body'], 'auto');
+		if ($msg["encoding"] !== "UTF-8") {
+			$msg['body'] = mb_convert_encoding($msg['body'], 'UTF-8', $msg["encoding"]);
+		}
+		//署名以降を削除
+		$msg['body_raw'] = $msg['body'];
+		$body = preg_split('/--\r?\n/is', $msg['body'], 2);
+		$msg['body'] = reset($body);
+
+		return $msg;
+	}
+
+	public function trimMessageId($mid) {
+		return preg_replace("/[<>]/", "", $mid);
+	}
+
 }
