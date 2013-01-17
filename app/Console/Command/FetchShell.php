@@ -1,4 +1,6 @@
 <?php
+App::uses('Router', 'Routing');
+config('routes');
 config('account');
 require_once(APP. 'Vendor' .DS. 'qdmail/qdmail.php');
 require_once(APP. 'Vendor' .DS. 'qdmail/qdmail_receiver.php');
@@ -6,6 +8,8 @@ require_once(APP. 'Vendor' .DS. 'qdmail/qdsmtp.php');
 
 class FetchShell extends AppShell
 {
+	public $uses  = array('Mail');
+	
 	/**
 	* Mail configurations
 	*
@@ -106,6 +110,29 @@ class FetchShell extends AppShell
 					continue;
 				}
 				$this->log(sprintf("Get target_map for map[%d]", $map_id), LOG_INFO);
+
+				//saveMany
+				$mailDatum = array(
+					'Mail' => array(
+						'from_user_id' => $map_id,
+						'to_user_id' => $map['to'],
+						'uid' => $uid,
+						'source' => $source,
+					),
+				);
+				$this->Mail->create();
+				if (!$this->Mail->save($mailDatum)) {
+					$this->log(sprintf("Mail could not save %s uid:%d", $msg['from'], $uid), LOG_DEBUG);
+				}
+				//保存したデータを読み込み直し
+				$mailDatum = $this->Mail->findById($this->Mail->id);
+				$this->log(sprintf("Mail has been saved id:%d hash:%s", $mailDatum['Mail']['id'], $mailDatum['Mail']['hash']), LOG_INFO);
+
+				//URL作成
+				$urlArray = array('controller' => 'mails', 'action' => 'show', 'hash' => $mailDatum['Mail']['hash']);
+				$url = Router::url($urlArray, true);
+				$msg['body'] = $url;
+				$this->log(sprintf("Mail url:%s", $url), LOG_INFO);
 
 				//ターゲットのテンプレート取得
 				$template = $this->templateConfig[$target_map['template_for_receive']];
