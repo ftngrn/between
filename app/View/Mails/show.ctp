@@ -13,7 +13,13 @@
 <section>
 	<h3><?php echo __('Attachments'); ?></h3>
 	<?php foreach($mail['attach'] as $i => $at): ?>
-	<p><?php printf ("%d. %s", $i, $at['filename']); ?></p>
+	<ul>
+		<li>
+			<?php echo $at['filename']; ?>
+			<br />
+			<img src="<?php	printf("data:%s;%s,", $at['mimetype'], $at['enc']); echo base64_encode($at['value']);	?>" />
+		</li>
+	</ul>
 	<?php endforeach; ?>
 </section>
 
