@@ -31,6 +31,12 @@
  */
 	Router::connect('/pages/*', array('controller' => 'pages', 'action' => 'display'));
 
+
+/**
+ * Slug url for Mail.hash
+ */
+	Router::connect('/mails/:hash', array('controller' => 'mails', 'action' => 'show'), array('hash' => '[a-zA-Z0-9]+'));
+
 /**
  * Load all plugin routes.  See the CakePlugin documentation on 
  * how to customize the loading of plugin routes.

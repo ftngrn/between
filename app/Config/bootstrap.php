@@ -133,6 +133,8 @@ Cache::config('default', array('engine' => 'File'));
  *
  */
 
+define('FULL_BASE_URL', 'http://bt.exlock.net');
+
 /**
  * Plugins need to be loaded manually, you can either load them one by one or all of them in a single call
  * Uncomment one of the lines below, as you need. make sure you read the documentation on CakePlugin to use more
