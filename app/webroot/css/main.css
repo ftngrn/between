@@ -4,7 +4,11 @@
    Author's custom styles
    ========================================================================== */
 
-
+section div {
+	padding: 15px 10px;
+	background-color: #f6f6f6;
+	border-radius: 6px 6px 6px 6px;
+}
 
 
 

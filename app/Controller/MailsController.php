@@ -13,6 +13,8 @@ class MailsController extends AppController {
  * @return void
  */
 	public function show() {
+		$this->view_show();
+
 		if (!isset($this->params['hash'])) {
 			throw new NotFoundException(__('Empty hash'));
 		}

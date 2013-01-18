@@ -48,4 +48,8 @@ class AppController extends Controller {
 		'Paginator' => array('className' => 'TwitterBootstrap.BootstrapPaginator'),
 	);
 
+	public function view_show() {
+		$this->layout = 'show';
+	}
+
 }

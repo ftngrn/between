@@ -15,7 +15,6 @@
 				<?php echo $this->Html->css('bootstrap.min'); ?>
 				<style>
 						body {
-								padding-top: 60px;
 								padding-bottom: 40px;
 						}
 				</style>
@@ -44,17 +43,17 @@
 						<hr>
 
 						<footer>
-								<p>&copy; Company 2012</p>
+								<p>Powered by <a href="https://github.com/ftngrn/between/">between</a></p>
 						</footer>
 
 				</div> <!-- /container -->
-				<?php echo $this->Html->script('//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min'); ?>
+				<?php echo $this->Html->script('//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'); ?>
 				<script>window.jQuery || document.write('<script src="/js/vendor/jquery-1.8.3.min.js"><\/script>')</script>
 
 				<?php echo $this->Html->script('vendor/bootstrap.min'); ?>
 
-				<?php echo $this->Html->script('vendor/plugins'); ?>
-				<?php echo $this->Html->script('vendor/main'); ?>
+				<?php echo $this->Html->script('plugins'); ?>
+				<?php echo $this->Html->script('main'); ?>
 
 				<script>
 						var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
