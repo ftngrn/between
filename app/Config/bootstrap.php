@@ -133,7 +133,7 @@ Cache::config('default', array('engine' => 'File'));
  *
  */
 
-define('FULL_BASE_URL', 'http://bt.exlock.net');
+define('FULL_BASE_URL', 'http://au.kddi.exlock.net');
 
 /**
  * Plugins need to be loaded manually, you can either load them one by one or all of them in a single call
@@ -144,7 +144,7 @@ define('FULL_BASE_URL', 'http://bt.exlock.net');
  * CakePlugin::load('DebugKit'); //Loads a single plugin named DebugKit
  *
  */
-CakePlugin::load(array('DebugKit', 'Migrations'));
+CakePlugin::load(array('DebugKit', 'Migrations', 'TwitterBootstrap'));
 
 /**
  * You can attach event listeners to the request lifecyle as Dispatcher Filter . By Default CakePHP bundles two filters:
