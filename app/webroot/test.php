@@ -67,6 +67,8 @@ if (!defined('WWW_ROOT')) {
 	define('WWW_ROOT', dirname(__FILE__) . DS);
 }
 
+define('CAKE_CORE_INCLUDE_PATH', ROOT . DS . 'cakephp' . DS . 'lib');
+
 if (!defined('CAKE_CORE_INCLUDE_PATH')) {
 	if (function_exists('ini_set')) {
 		ini_set('include_path', ROOT . DS . 'lib' . PATH_SEPARATOR . ini_get('include_path'));
