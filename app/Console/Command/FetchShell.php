@@ -131,7 +131,6 @@ class FetchShell extends AppShell
 				//URL作成
 				$urlArray = array('controller' => 'mails', 'action' => 'show', 'hash' => $mailDatum['Mail']['hash']);
 				$url = Router::url($urlArray, true);
-				$msg['body'] = $url;
 				$this->log(sprintf("Mail url:%s", $url), LOG_INFO);
 
 				//ターゲットのテンプレート取得
@@ -146,7 +145,8 @@ class FetchShell extends AppShell
 				$body = $template['body'];
 				$body = str_replace('%%SUBJECT%%', $msg['subject'], $body);
 				$body = str_replace('%%BODY%%', trim($msg['body']), $body);
-				$this->log(sprintf("Replace subject and body"), LOG_INFO);
+				$body = str_replace('%%URL%%', $url, $body);
+				$this->log(sprintf("Replace subject,body and url"), LOG_INFO);
 
 				//メールを作成して送信
 				$this->log(sprintf("Ready for smtp"), LOG_INFO);
