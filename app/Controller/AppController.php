@@ -52,4 +52,7 @@ class AppController extends Controller {
 		$this->layout = 'show';
 	}
 
+	public function beforeFilter() {
+		$this->view_show();
+	}
 }
