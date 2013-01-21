@@ -3348,7 +3348,7 @@ $this->debugEchoLf($this->to);
 		return false;
 	}
 
-	function log( $mes = null ){
+	function log( $mes = null, $type = 3 ){
 		if( is_null( $mes )){
 			$addrs = $this->done() ;
 //			$this->done = array();
@@ -3758,7 +3758,7 @@ class QdmailComponent extends QdmailUserFunc{
 	//----------------------------
 	// Override Parent Method
 	//----------------------------
-	function & smtpObject(){
+	function & smtpObject($null = false){
 		if( isset( $this->Qdsmtp ) && is_object( $this->Qdsmtp ) ){
 			return $this->Qdsmtp;
 		}

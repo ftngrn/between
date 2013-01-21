@@ -1279,7 +1279,7 @@ class QdmailReceiver extends QdmailReceiverError{
 
 	var $name				= 'QdmailReceiver';
 
-	function start(){
+	static function start(){
 		$type_link = array(
 			'stdin'	=> 'QdDecodeStdin',
 			'pop'	=> 'QdPop',
@@ -1307,7 +1307,7 @@ class QdmailReceiver extends QdmailReceiverError{
 		return QdmailReceiver::getInstance( $type_link[$type] , $param );
 	}
 
-	function & getInstance( $class_name , $param = null){
+	static function & getInstance( $class_name , $param = null){
 		$version = (float) PHP_VERSION ;
 		if( 5 > $version ){
 			$obj = & new $class_name($param);
