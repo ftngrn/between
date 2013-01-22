@@ -1,39 +1,31 @@
-CakePHP
-=======
+# Between #
 
-[![CakePHP](http://cakephp.org/img/cake-logo.png)](http://www.cakephp.org)
+Between is simple mail exchange system.
+Using a template, you can embed a URL that you can browse through them, or body-subject.
+This system is developed in CakePHP.
 
-CakePHP is a rapid development framework for PHP which uses commonly known design patterns like Active Record, Association Data Mapping, Front Controller and MVC.
-Our primary goal is to provide a structured framework that enables PHP users at all levels to rapidly develop robust web applications, without any loss to flexibility.
+## Installation ##
 
-Some Handy Links
-----------------
+1. Extract all files, and place into a directory that is accessible to the web server, and able to run PHP.
+2. Setup correct permissions on files and folders:
+	* `chmod -R 777 app/tmp`
+3. `cp app/Config/account.php.default app/Config/account.php` 
+4. Edit `app/Config/account.php`
+5. Edit crontab
 
-[CakePHP](http://www.cakephp.org) - The rapid development PHP framework
+	*       *       *       *       *       {APP Directory}/Console/cake -app {APP Directory} fetch
+	# remove old mail cache
+	5       *       *       *       *       find {APP Directory}/tmp/cache/mails -type f -mmin +4320|xargs rm -f
 
-[Cookbook](http://book.cakephp.org) - THE Cake user documentation; start learning here!
+##License
 
-[Plugins](http://plugins.cakephp.org/) - A repository of extensions to the framework
+The MIT License (MIT)
 
-[The Bakery](http://bakery.cakephp.org) - Tips, tutorials and articles
+Copyright (c) 2013 Noriaki Ishihara
 
-[API](http://api.cakephp.org) - A reference to Cake's classes
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-[CakePHP TV](http://tv.cakephp.org) - Screen casts from events and video tutorials
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-[The Cake Software Foundation](http://cakefoundation.org/) - promoting development related to CakePHP
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Get Support!
-------------
-
-[Our Google Group](http://groups.google.com/group/cake-php) - community mailing list and forum
-
-[#cakephp](http://webchat.freenode.net/?channels=#cakephp) on irc.freenode.net - Come chat with us, we have cake.
-
-[Q & A](http://ask.cakephp.org/) - Ask questions here, all questions welcome
-
-[Lighthouse](http://cakephp.lighthouseapp.com/) - Got issues? Please tell us!
-
-[![Bake Status](https://secure.travis-ci.org/cakephp/cakephp.png?branch=master)](http://travis-ci.org/cakephp/cakephp)
-
-![Cake Power](https://raw.github.com/cakephp/cakephp/master/lib/Cake/Console/Templates/skel/webroot/img/cake.power.gif)
